@@ -1,7 +1,7 @@
 import pygame
 from collections import namedtuple
 
-from utils import Direction
+from Pacman_game.utils import Direction
 
 Pos = namedtuple('Position', 'x, y')
 
