@@ -1,10 +1,12 @@
 import copy
-from ghost import Ghost
-from board import boards
+from Pacman_game.ghost import Ghost
+from Pacman_game.utils import Direction
+
+from Pacman_game.board import boards
 import pygame
 from math import pi as PI
 from collections import namedtuple
-from utils import Direction
+
 
 pygame.init()
 font = pygame.font.Font('freesansbold.ttf', 20)
@@ -25,13 +27,13 @@ class PacmanGame:
         self.flicker = False
         self.player_images = []
         for i in range(1, 5):
-            self.player_images.append(pygame.transform.scale(pygame.image.load(f'assets/player_images/{i}.png'), (45, 45)))
-        self.blinky_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/red.png'), (45, 45))
-        self.pinky_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/pink.png'), (45, 45))
-        self.inky_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/blue.png'), (45, 45))
-        self.clyde_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/orange.png'), (45, 45))
-        self.spooked_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/powerup.png'), (45, 45))
-        self.dead_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/dead.png'), (45, 45))
+            self.player_images.append(pygame.transform.scale(pygame.image.load(f'Pacman_game/assets/player_images/{i}.png'), (45, 45)))
+        self.blinky_img = pygame.transform.scale(pygame.image.load(f'Pacman_game/assets/ghost_images/red.png'), (45, 45))
+        self.pinky_img = pygame.transform.scale(pygame.image.load(f'Pacman_game/assets/ghost_images/pink.png'), (45, 45))
+        self.inky_img = pygame.transform.scale(pygame.image.load(f'Pacman_game/assets/ghost_images/blue.png'), (45, 45))
+        self.clyde_img = pygame.transform.scale(pygame.image.load(f'Pacman_game/assets/ghost_images/orange.png'), (45, 45))
+        self.spooked_img = pygame.transform.scale(pygame.image.load(f'Pacman_game/assets/ghost_images/powerup.png'), (45, 45))
+        self.dead_img = pygame.transform.scale(pygame.image.load(f'Pacman_game/assets/ghost_images/dead.png'), (45, 45))
         
         #init board
         self.color = 'blue'
@@ -166,16 +168,8 @@ class PacmanGame:
                 if event.type == pygame.QUIT: #Red button X
                     run = False
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_RIGHT:
-                        self.direction_command = Direction.RIGHT
-                    if event.key == pygame.K_LEFT:
-                        self.direction_command = Direction.LEFT
-                    if event.key == pygame.K_UP:
-                        self.direction_command = Direction.UP
-                    if event.key == pygame.K_DOWN:
-                        self.direction_command = Direction.DOWN
                     if event.key == pygame.K_SPACE and (self.game_over or self.game_won):
-                        self.reset()
+                        self.take_damage()
                         self.score = 0
                         self.lives = 3
                         self.level = copy.deepcopy(boards)
@@ -276,9 +270,11 @@ class PacmanGame:
             if self.level[self.center.y // num1][self.center.x // num2] == 1:
                 self.level[self.center.y  // num1][self.center.x // num2] = 0
                 self.score += 10
+                self.reward = 5
             if self.level[self.center.y  // num1][self.center.x // num2] == 2:
                 self.level[self.center.y  // num1][self.center.x // num2] = 0
                 self.score += 50
+                self.reward = 10
                 self.powerup = True
                 self.power_count = 0
                 self.eaten_ghosts = [False, False, False, False]
@@ -361,8 +357,8 @@ class PacmanGame:
                 clyd_target = return_target
         return [blink_target, ink_target, pink_target, clyd_target]
 
-    def reset(self):
-        #reset game state
+    def take_damage(self):
+        #take_damage game state
         self.direction_command = Direction.RIGHT
         self.powerup = False
         self.power_counter = 0
@@ -383,6 +379,7 @@ class PacmanGame:
         self.inky_dead = False
         self.clyde_dead = False
         self.pinky_dead = False
+        self.reward = -10
 
     def check_damage(self):
         # add to if not powerup to check if eaten ghosts
@@ -392,36 +389,41 @@ class PacmanGame:
                     (self.player_circle.colliderect(self.pinky.rect) and not self.pinky.dead) or \
                     (self.player_circle.colliderect(self.clyde.rect) and not self.clyde.dead):
                 if self.lives > 0:
-                    self.reset()
+                    self.take_damage()
                 else:
+                    self.reward = -15
                     self.game_over = True
                     self.moving = False
                     self.startup_counter = 0
         if self.powerup and self.player_circle.colliderect(self.blinky.rect) and self.eaten_ghost[0] and not self.blinky.dead:
             if self.lives > 0:
-                self.reset()
+                self.take_damage()
             else:
+                self.reward = -15
                 self.game_over = True
                 self.moving = False
                 self.startup_counter = 0
         if self.powerup and self.player_circle.colliderect(self.inky.rect) and self.eaten_ghost[1] and not self.inky.dead:
             if self.lives > 0:
-                self.reset()
+                self.take_damage()
             else:
+                self.reward = -15
                 self.game_over = True
                 self.moving = False
                 self.startup_counter = 0
         if self.powerup and self.player_circle.colliderect(self.pinky.rect) and self.eaten_ghost[2] and not self.pinky.dead:
             if self.lives > 0:
-                self.reset()
+                self.take_damage()
             else:
+                self.reward = -15
                 self.game_over = True
                 self.moving = False
                 self.startup_counter = 0
         if self.powerup and self.player_circle.colliderect(self.clyde.rect) and self.eaten_ghost[3] and not self.clyde.dead:
             if self.lives > 0:
-                self.reset()
+                self.take_damage()
             else:
+                self.reward = -15
                 self.game_over = True
                 self.moving = False
                 self.startup_counter = 0
@@ -429,18 +431,22 @@ class PacmanGame:
             self.blinky_dead = True
             self.eaten_ghost[0] = True
             self.score += (2 ** self.eaten_ghost.count(True)) * 100
+            self.reward = 15
         if self.powerup and self.player_circle.colliderect(self.inky.rect) and not self.inky.dead and not self.eaten_ghost[1]:
             self.inky_dead = True
             self.eaten_ghost[1] = True
             self.score += (2 ** self.eaten_ghost.count(True)) * 100
+            self.reward = 15
         if self.powerup and self.player_circle.colliderect(self.pinky.rect) and not self.pinky.dead and not self.eaten_ghost[2]:
             self.pinky_dead = True
             self.eaten_ghost[2] = True
             self.score += (2 ** self.eaten_ghost.count(True)) * 100
+            self.reward = 15
         if self.powerup and self.player_circle.colliderect(self.clyde.rect) and not self.clyde.dead and not self.eaten_ghost[3]:
             self.clyde_dead = True
             self.eaten_ghost[3] = True
             self.score += (2 ** self.eaten_ghost.count(True)) * 100
+            self.reward = 15
 
     def set_ghosts_speed(self):
         if self.powerup:
@@ -464,90 +470,99 @@ class PacmanGame:
         if self.clyde_dead:
             self.ghost_speeds[3] = 4
 
-    def run(self):
-        run = True
-        while run:  
-            self.handle_counter()
-            self.screen.fill('black')
-            self.draw_board()
-            
-            # Player is a circle so select its center
-            self.center = Pos(self.player.x+23, self.player.y + 24)
-            
-            self.set_ghosts_speed()
-            
-            self.game_won = True
-            for i in range(len(self.level)):
-                if 1 in self.level[i] or 2 in self.level[i]:
-                    self.game_won = False
-                    
-            if self.game_over == True:
-                run = False
-            
-            self.player_circle = pygame.draw.circle(self.screen, 'black', (self.center.x, self.center.y), 20, 2) 
-            
-            self.draw_player()
-
-            self.blinky = Ghost(self.blinkyPos, self.targets[0], self.ghost_speeds[0], self.blinky_img, self.blinkyDirection, self.blinky_dead,
-                    self.blinky_box, 0, self)
-            self.inky = Ghost(self.inkyPos, self.targets[1], self.ghost_speeds[1], self.inky_img, self.inkyDirection, self.inky_dead,
-                        self.inky_box, 1, self)
-            self.pinky = Ghost(self.pinkyPos, self.targets[2], self.ghost_speeds[2], self.pinky_img, self.pinkyDirection, self.pinky_dead,
-                        self.pinky_box, 2, self)
-            self.clyde = Ghost(self.clydePos, self.targets[3], self.ghost_speeds[3], self.clyde_img, self.clydeDirection, self.clyde_dead,
-                        self.clyde_box, 3, self)
-            
-            self.draw_misc()
-            
-            self.targets = self.get_targets()
-
-            self.turns_allowed = self.check_position()
-            
-            if self.moving :
-                self.move_player()
-                if not self.blinky_dead and not self.blinky.in_box:
-                    self.blinkyPos, self.blinkyDirection = self.blinky.move_blinky()
-                else:
-                    self.blinkyPos, self.blinkyDirection = self.blinky.move_clyde()
-                if not self.pinky_dead and not self.pinky.in_box:
-                    self.pinkyPos, self.pinkyDirection = self.pinky.move_pinky()
-                else:
-                    self.pinkyPos,self.pinkyDirection = self.pinky.move_clyde()
-                if not self.inky_dead and not self.inky.in_box:
-                    self.inkyPos, self.inkyDirection = self.inky.move_inky()
-                else:
-                    self.inkyPos, self.inkyDirection = self.inky.move_clyde()
-                self.clydePos, self.clydeDirection = self.clyde.move_clyde()
-            
-            
-            self.check_collisions()
-            
-            self.check_damage()
-                    
-            run = self.user_input()
-            
-            self.set_direction()
-            
-            # Joystick movements
-            if self.player.x > 900:
-                self.player = Pos(-47, self.player.y)
-            elif self.player.x < -50:
-                self.player = Pos(897, self.player.y)
+    def play_action(self, action):
+        self.reward = 0
                 
-            if self.blinky.in_box and self.blinky_dead:
-                self.blinky_dead = False
-            if self.inky.in_box and self.inky_dead:
-                self.inky_dead = False
-            if self.pinky.in_box and self.pinky_dead:
-                self.pinky_dead = False
-            if self.clyde.in_box and self.clyde_dead:
-                self.clyde_dead = False
-            
-            pygame.display.flip()
-        pygame.quit()    
+        self.handle_counter()
+        self.screen.fill('black')
+        self.draw_board()
+        
+        # Player is a circle so select its center
+        self.center = Pos(self.player.x+23, self.player.y + 24)
+        
+        self.set_ghosts_speed()
+        
+        self.game_won = True
+        for i in range(len(self.level)):
+            if 1 in self.level[i] or 2 in self.level[i]:
+                self.game_won = False
+                
+        if self.game_won == True: 
+            self.game_over = True
+                
+        if self.game_over == True:
+            reward = -10
+            return self.score, self.game_over, self.game_won, self.reward
 
-if __name__ == '__main__':
-    game = PacmanGame()
-    game.run()
+        
+        self.player_circle = pygame.draw.circle(self.screen, 'black', (self.center.x, self.center.y), 20, 2) 
+        
+        self.draw_player()
+
+        self.blinky = Ghost(self.blinkyPos, self.targets[0], self.ghost_speeds[0], self.blinky_img, self.blinkyDirection, self.blinky_dead,
+                self.blinky_box, 0, self)
+        self.inky = Ghost(self.inkyPos, self.targets[1], self.ghost_speeds[1], self.inky_img, self.inkyDirection, self.inky_dead,
+                    self.inky_box, 1, self)
+        self.pinky = Ghost(self.pinkyPos, self.targets[2], self.ghost_speeds[2], self.pinky_img, self.pinkyDirection, self.pinky_dead,
+                    self.pinky_box, 2, self)
+        self.clyde = Ghost(self.clydePos, self.targets[3], self.ghost_speeds[3], self.clyde_img, self.clydeDirection, self.clyde_dead,
+                    self.clyde_box, 3, self)
+        
+        self.draw_misc()
+        
+        self.targets = self.get_targets()
+
+        self.turns_allowed = self.check_position()
+        
+        if self.moving :
+            self.move_player()
+            if not self.blinky_dead and not self.blinky.in_box:
+                self.blinkyPos, self.blinkyDirection = self.blinky.move_blinky()
+            else:
+                self.blinkyPos, self.blinkyDirection = self.blinky.move_clyde()
+            if not self.pinky_dead and not self.pinky.in_box:
+                self.pinkyPos, self.pinkyDirection = self.pinky.move_pinky()
+            else:
+                self.pinkyPos,self.pinkyDirection = self.pinky.move_clyde()
+            if not self.inky_dead and not self.inky.in_box:
+                self.inkyPos, self.inkyDirection = self.inky.move_inky()
+            else:
+                self.inkyPos, self.inkyDirection = self.inky.move_clyde()
+            self.clydePos, self.clydeDirection = self.clyde.move_clyde()
+        
+        
+        self.check_collisions()
+        
+        self.check_damage()        
+        
+        if self.user_input() == False :
+            pygame.quit()
+            quit()
+        
+        self.direction_command = action
+        
+        self.set_direction()
+        
+        # Joystick movements
+        if self.player.x > 900:
+            self.player = Pos(-47, self.player.y)
+        elif self.player.x < -50:
+            self.player = Pos(897, self.player.y)
+            
+        if self.blinky.in_box and self.blinky_dead:
+            self.blinky_dead = False
+        if self.inky.in_box and self.inky_dead:
+            self.inky_dead = False
+        if self.pinky.in_box and self.pinky_dead:
+            self.pinky_dead = False
+        if self.clyde.in_box and self.clyde_dead:
+            self.clyde_dead = False
+        
+        pygame.display.flip()
+        
+        return self.score, self.game_over, self.game_won, self.reward
+
+    def stop_game():
+        pygame.quit()
+
     
-    pygame.quit()
