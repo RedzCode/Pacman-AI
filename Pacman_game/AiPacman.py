@@ -1,4 +1,6 @@
 import copy
+
+import numpy as np
 from Pacman_game.ghost import Ghost
 from Pacman_game.utils import Direction
 
@@ -76,7 +78,67 @@ class PacmanGame:
         self.inky_box = False
         self.clyde_box = False
         self.pinky_box = False
+    
+    def get_distance_ghosts(self):
+        max_dist = np.sqrt(np.sum(np.square( np.array((0, 0)) -  np.array((self.HEIGHT-1, self.WIDTH-1)))))
+        player_pt = np.array((self.player.x, self.player.y))
+        blinky_pt = np.array((self.blinkyPos.x, self.blinkyPos.y))
+        inky_pt = np.array((self.inkyPos.x, self.inkyPos.y))
+        pinky_pt = np.array((self.pinkyPos.x, self.pinkyPos.y))
+        clyde_pt = np.array((self.clydePos.x, self.clydePos.y))
         
+        dist_blinky = np.sqrt(np.sum(np.square( player_pt - blinky_pt )))/max_dist
+        dist_inky = np.sqrt(np.sum(np.square( player_pt - inky_pt )))/max_dist
+        dist_pinky = np.sqrt(np.sum(np.square( player_pt - pinky_pt )))/max_dist
+        dist_clyde = np.sqrt(np.sum(np.square( player_pt - clyde_pt )))/max_dist
+        
+        return dist_blinky, dist_inky, dist_pinky, dist_clyde
+    
+    def get_direction_oneHotEncoded(self):
+        return ((self.playerDirection == Direction.RIGHT) *1, 
+                (self.playerDirection == Direction.LEFT) *1,
+                (self.playerDirection == Direction.UP) *1,
+                (self.playerDirection == Direction.DOWN) *1)
+    
+    def get_distance_power(self):
+        max_dist = np.sqrt(np.sum(np.square( np.array((0, 0)) -  np.array((self.HEIGHT-1, self.WIDTH-1)))))
+        player_pt = np.array((self.player.x, self.player.y))
+        power1_pt = np.array((4, 2))
+        power2_pt = np.array((4, 27))
+        power3_pt = np.array((24, 2))
+        power4_pt = np.array((24, 27))
+        
+        dist_power1 = np.sqrt(np.sum(np.square( player_pt - power1_pt )))/max_dist
+        dist_power2 = np.sqrt(np.sum(np.square( player_pt - power2_pt )))/max_dist
+        dist_power3 = np.sqrt(np.sum(np.square( player_pt - power3_pt )))/max_dist
+        dist_power4 = np.sqrt(np.sum(np.square( player_pt - power4_pt )))/max_dist
+        
+        return dist_power1, dist_power2, dist_power3, dist_power4
+    
+    def get_power_used(self):
+        power1_used, power2_used, power3_used, power4_used = [1,1,1,1]
+        if self.level[4][2] == 2:
+            power1_used = 0
+        if self.level[4][27] == 2:
+            power2_used = 0
+        if self.level[24][2] == 2:
+            power3_used = 0
+        if self.level[24][27] == 2:
+            power4_used = 0
+        
+        return power1_used, power2_used, power3_used, power4_used
+    
+    def get_remaining_points(self):
+        sum = 0
+        for i in range(len(self.level)):
+            sum += self.level[i].count(1)
+        
+        return sum
+                
+    def get_move_walls(self):
+        turns_all = np.multiply(np.array(self.turns_allowed), 1)
+        return turns_all[0], turns_all[1], turns_all[2], turns_all[3]
+
     def draw_board(self):
         num1 = ((self.HEIGHT - 50) // 32)
         num2 = (self.WIDTH // 30)
@@ -270,11 +332,11 @@ class PacmanGame:
             if self.level[self.center.y // num1][self.center.x // num2] == 1:
                 self.level[self.center.y  // num1][self.center.x // num2] = 0
                 self.score += 10
-                self.reward = 5
+                self.reward += 5
             if self.level[self.center.y  // num1][self.center.x // num2] == 2:
                 self.level[self.center.y  // num1][self.center.x // num2] = 0
                 self.score += 50
-                self.reward = 10
+                self.reward += 10
                 self.powerup = True
                 self.power_count = 0
                 self.eaten_ghosts = [False, False, False, False]
@@ -379,7 +441,7 @@ class PacmanGame:
         self.inky_dead = False
         self.clyde_dead = False
         self.pinky_dead = False
-        self.reward = -10
+        self.reward += -10
 
     def check_damage(self):
         # add to if not powerup to check if eaten ghosts
@@ -391,7 +453,7 @@ class PacmanGame:
                 if self.lives > 0:
                     self.take_damage()
                 else:
-                    self.reward = -15
+                    self.reward += -15
                     self.game_over = True
                     self.moving = False
                     self.startup_counter = 0
@@ -399,7 +461,7 @@ class PacmanGame:
             if self.lives > 0:
                 self.take_damage()
             else:
-                self.reward = -15
+                self.reward += -15
                 self.game_over = True
                 self.moving = False
                 self.startup_counter = 0
@@ -407,7 +469,7 @@ class PacmanGame:
             if self.lives > 0:
                 self.take_damage()
             else:
-                self.reward = -15
+                self.reward += -15
                 self.game_over = True
                 self.moving = False
                 self.startup_counter = 0
@@ -415,7 +477,7 @@ class PacmanGame:
             if self.lives > 0:
                 self.take_damage()
             else:
-                self.reward = -15
+                self.reward += -15
                 self.game_over = True
                 self.moving = False
                 self.startup_counter = 0
@@ -423,7 +485,7 @@ class PacmanGame:
             if self.lives > 0:
                 self.take_damage()
             else:
-                self.reward = -15
+                self.reward += -15
                 self.game_over = True
                 self.moving = False
                 self.startup_counter = 0
@@ -431,22 +493,22 @@ class PacmanGame:
             self.blinky_dead = True
             self.eaten_ghost[0] = True
             self.score += (2 ** self.eaten_ghost.count(True)) * 100
-            self.reward = 15
+            self.reward += 15
         if self.powerup and self.player_circle.colliderect(self.inky.rect) and not self.inky.dead and not self.eaten_ghost[1]:
             self.inky_dead = True
             self.eaten_ghost[1] = True
             self.score += (2 ** self.eaten_ghost.count(True)) * 100
-            self.reward = 15
+            self.reward += 15
         if self.powerup and self.player_circle.colliderect(self.pinky.rect) and not self.pinky.dead and not self.eaten_ghost[2]:
             self.pinky_dead = True
             self.eaten_ghost[2] = True
             self.score += (2 ** self.eaten_ghost.count(True)) * 100
-            self.reward = 15
+            self.reward += 15
         if self.powerup and self.player_circle.colliderect(self.clyde.rect) and not self.clyde.dead and not self.eaten_ghost[3]:
             self.clyde_dead = True
             self.eaten_ghost[3] = True
             self.score += (2 ** self.eaten_ghost.count(True)) * 100
-            self.reward = 15
+            self.reward += 15
 
     def set_ghosts_speed(self):
         if self.powerup:
@@ -488,10 +550,11 @@ class PacmanGame:
                 self.game_won = False
                 
         if self.game_won == True: 
+            self.reward += 20
             self.game_over = True
                 
         if self.game_over == True:
-            reward = -10
+            self.reward += -10
             return self.score, self.game_over, self.game_won, self.reward
 
         
@@ -559,7 +622,6 @@ class PacmanGame:
             self.clyde_dead = False
         
         pygame.display.flip()
-        
         return self.score, self.game_over, self.game_won, self.reward
 
     def stop_game():
