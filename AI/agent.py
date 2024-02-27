@@ -2,7 +2,7 @@ from collections import deque #Deque (Doubly Ended Queue)
 import torch
 import random
 import numpy as np
-from AI.model import Linear_QNet
+from AI.model import Linear_QNet, QTrainer
 from Pacman_game.AiPacman import PacmanGame, Pos
 from Pacman_game.utils import Direction
 
@@ -18,8 +18,8 @@ class Agent():
         #if we exceed the memory it will automatically remove element from the left => popleft()
         self.memory = deque(maxlen=MAX_MEMORY) 
         # 21 inputs, 256 hiddent neurons, 4 outputs neurons
-        self.model = None # TODO
-        self.trainer = None # TODO
+        self.model = Linear_QNet(21, 256, 4)
+        self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
         
     
     def get_state(self, game):
