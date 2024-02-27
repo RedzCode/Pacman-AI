@@ -2,6 +2,7 @@ from collections import deque #Deque (Doubly Ended Queue)
 import torch
 import random
 import numpy as np
+from AI.helper import plot, plot_vic
 from AI.model import Linear_QNet, QTrainer
 from Pacman_game.AiPacman import PacmanGame, Pos
 from Pacman_game.utils import Direction
@@ -17,8 +18,8 @@ class Agent():
         self.gamma = 0 # discount rate
         #if we exceed the memory it will automatically remove element from the left => popleft()
         self.memory = deque(maxlen=MAX_MEMORY) 
-        # 21 inputs, 256 hiddent neurons, 4 outputs neurons
-        self.model = Linear_QNet(21, 256, 4)
+        # 22 inputs, 256 hiddent neurons, 4 outputs neurons
+        self.model = Linear_QNet(22, 256, 4)
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
         
     
@@ -28,7 +29,8 @@ class Agent():
         state.extend(game.get_direction_oneHotEncoded())
         state.extend(game.get_distance_power())
         state.extend(game.get_power_used())
-        state.extend(game.game.get_remaining_points())
+        state.append(game.get_remaining_points())
+        state.append(game.powerup * 1)
         state.extend(game.get_move_walls())
         
         return np.array(state, dtype=float)
@@ -76,28 +78,35 @@ class Agent():
 def train():
     plot_scores = []
     plot_mean_scores = []
+    plot_victories = []
+    plot_mean_victories = []
     total_score = 0
+    total_victories = 0
     record = [0, False] #current best score  = 0 and game won = false
-    
+    total_reward = 0
     agent = Agent()
     game = PacmanGame()
     
     while True: 
+        
         state_old = agent.get_state(game)
         
         # get move
-        final_direction = agent.decode_action(agent.get_action(state_old))
+        final_move = agent.get_action(state_old)
         
         # perform move and get new state
+        final_direction = agent.decode_action(final_move)
         score, game_over, game_won, reward = game.play_action(final_direction)
         
         state_new = agent.get_state(game)
         
         # train short memory 
-        agent.train_short_memory(state_old, final_direction, reward, state_new, game_over)
+        agent.train_short_memory(state_old, final_move, reward, state_new, game_over)
         
         # remember
-        agent.remember(state_old, final_direction, reward, state_new, game_over)
+        agent.remember(state_old, final_move, reward, state_new, game_over)
+        
+        total_reward += reward
 
         if game_over : 
             # train long memory
@@ -108,15 +117,26 @@ def train():
             if game_won == False and record[1] == False:
                 if score > record[0]:
                     record = [score, game_won] 
-                    #agent.model.save()
+                    agent.model.save()
             elif game_won == True and record[1] == False: 
                 record = [score, game_won]
-                #agent.model.save()
+                agent.model.save()
             elif game_won == True and record[1] == True: 
                 if score > record[0]:
                     record = [score, game_won] 
-                    #agent.model.save()
+                    agent.model.save()
             
-            print('Game: ', agent.n_games, 'Score: ', score, 'Record: ', record)
+            print('Game:', agent.n_games, '|Score:', score, '|Won:', game_won, '|Record:', record, '|Reward:', total_reward)
+            total_reward = 0
             
-            # TODO : plot
+            plot_scores.append(score)
+            total_score += score
+            mean_score = total_score / agent.n_games
+            plot_mean_scores.append(mean_score)
+            plot(plot_scores, plot_mean_scores)
+
+            """  plot_victories.append(game_won*1)
+            total_victories += game_won * 1
+            mean_victories = total_victories / agent.n_games
+            plot_mean_victories.append(mean_victories)
+            plot_vic(plot_victories, plot_mean_victories) """

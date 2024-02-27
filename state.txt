@@ -8,6 +8,8 @@ power1_used, power2_used, power3_used, power4_used,  => [0 ou 1]
 
 remaining_pt,  => [0,1]
 
+power_activated, => [0 ou 1]
+
 cango_r, cango_l, cango_u, cango_d, => [0 ou 1]
 
 ]

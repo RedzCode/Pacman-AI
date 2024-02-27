@@ -16,9 +16,18 @@ font = pygame.font.Font('freesansbold.ttf', 20)
 fps = 60
 Pos = namedtuple('Position', 'x, y')
 
+PLAYER_SPEED = 2
+
+GHOST_SPEED_1 = 1
+GHOST_SPEED_2 = 2
+GHOST_SPEED_3 = 4
+
 class PacmanGame:
     
     def __init__(self, WIDTH=900, HEIGHT=950):
+        self.reset(WIDTH, HEIGHT)
+    
+    def reset(self, WIDTH=900, HEIGHT=950):
         self.WIDTH = WIDTH
         self.HEIGHT = HEIGHT
 
@@ -54,12 +63,12 @@ class PacmanGame:
         self.eaten_ghost = [False, False, False, False]
         
         self.lives = 3
-        self.player_speed = 2
+        self.player_speed = PLAYER_SPEED
         self.player = Pos(450,663)
         self.playerDirection = Direction.RIGHT
         self.direction_command = Direction.RIGHT
         
-        self.ghost_speeds = [2, 2, 2, 2]
+        self.ghost_speeds = [GHOST_SPEED_2, GHOST_SPEED_2, GHOST_SPEED_2, GHOST_SPEED_2]
         self.blinkyPos = Pos(56,58)
         self.blinkyDirection = Direction.RIGHT
         self.inkyPos = Pos(380,438) 
@@ -512,25 +521,25 @@ class PacmanGame:
 
     def set_ghosts_speed(self):
         if self.powerup:
-            self.ghost_speeds = [1, 1, 1, 1]
+            self.ghost_speeds = [GHOST_SPEED_1, GHOST_SPEED_1, GHOST_SPEED_1, GHOST_SPEED_1]
         else:
-            self.ghost_speeds = [2, 2, 2, 2]
+            self.ghost_speeds = [GHOST_SPEED_2, GHOST_SPEED_2, GHOST_SPEED_2, GHOST_SPEED_2]
         if self.eaten_ghost[0]:
-            self.ghost_speeds[0] = 2
+            self.ghost_speeds[0] = GHOST_SPEED_2
         if self.eaten_ghost[1]:
-            self.ghost_speeds[1] = 2
+            self.ghost_speeds[1] = GHOST_SPEED_2
         if self.eaten_ghost[2]:
-            self.ghost_speeds[2] = 2
+            self.ghost_speeds[2] = GHOST_SPEED_2
         if self.eaten_ghost[3]:
-            self.ghost_speeds[3] = 2
+            self.ghost_speeds[3] = GHOST_SPEED_2
         if self.blinky_dead:
-            self.ghost_speeds[0] = 4
+            self.ghost_speeds[0] = GHOST_SPEED_3
         if self.inky_dead:
-            self.ghost_speeds[1] = 4
+            self.ghost_speeds[1] = GHOST_SPEED_3
         if self.pinky_dead:
-            self.ghost_speeds[2] = 4
+            self.ghost_speeds[2] = GHOST_SPEED_3
         if self.clyde_dead:
-            self.ghost_speeds[3] = 4
+            self.ghost_speeds[3] = GHOST_SPEED_3
 
     def play_action(self, action):
         self.reward = 0
